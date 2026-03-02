@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="index, follow">
+    <title>הסיפור שלנו - תוכן חינוכי איכותי לילדים דתיים — צבעוני</title>
+    <meta name="description" content="צבעוני נוסדה מתוך אהבה ליצירה ומחויבות לערכים יהודיים. למדו על הייעוד שלנו ליצור דפי צביעה חינוכיים ומרתקים המותאמים במיוחד לילדים דתיים ולמשפחותיהם.">
+    <meta name="keywords" content="אודות צבעוני, תוכן חינוכי לילדים דתיים, דפי צביעה, צבעוני, תוכן יהודי לילדים">
+    
+    <!-- Zappy Analytics -->
+<script>
+(function() {
+  'use strict';
+  
+  // Configuration
+  var config = {
+    websiteId: 'c06f211c-2034-4e66-9ac6-76abbdc8956e',
+    apiUrl: 'https://api.zappy5.com/api/analytics/track',
+    sessionDuration: 30 * 60 * 1000, // 30 minutes
+    visitorDuration: 30 * 24 * 60 * 60 * 1000, // 30 days
+    trackPageViews: true,
+    trackClicks: true,
+    trackFormSubmissions: true
+  };
+  
+  // Generate or retrieve persistent visitor ID (30 days)
+  function getVisitorId() {
+    var visitorKey = 'zappy_visitor_' + config.websiteId;
+    var visitor = null;
+    
+    try {
+      visitor = localStorage.getItem(visitorKey);
+      if (visitor) {
+        var visitorData = JSON.parse(visitor);
+        var now = Date.now();
+        
+        // Check if visitor ID is still valid (30 days)
+        if (now - visitorData.created < config.visitorDuration) {
+          // Update last seen timestamp
+          visitorData.lastSeen = now;
+          localStorage.setItem(visitorKey, JSON.stringify(visitorData));
+          return visitorData.id;
+        }
+      }
+    } catch (e) {
+      console.warn('Zappy Analytics: LocalStorage not available');
+    }
+    
+    // Generate new visitor ID
+    var newVisitorId = 'zv_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    
+    try {
+      localStorage.setItem(visitorKey, JSON.stringify({
+        id: newVisitorId,
+        created: Date.now(),
+        lastSeen: Date.now()
+      }));
+    } catch (e) {
+      // Continue without local storage
+    }
+    
+    return newVisitorId;
+  }
+  
+  // Generate or retrieve session ID (30 minutes)
+  function getSessionId() {
+    var sessionKey = 'zappy_session_' + config.websiteId;
+    var session = null;
+    
+    try {
+      session = sessionStorage.getItem(sessionKey);
+      if (session) {
+        var sessionData = JSON.parse(session);
+        var now = Date.now();
+        
+        // Check if session is still valid
+        if (now - sessionData.timestamp < config.sessionDuration) {
+          // Update timestamp
+          sessionData.timestamp = now;
+          sessionStorage.setItem(sessionKey, JSON.stringify(sessionData));
+          return sessionData.id;
+        }
+      }
+    } catch (e) {
+      console.warn('Zappy Analytics: SessionStorage not available');
+    }
+    
+    // Generate new session ID
+    var newSessionId = 'zs_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    
+    try {
+      sessionStorage.setItem(sessionKey, JSON.stringify({
+        id: newSessionId,
+        timestamp: Date.now()
+      }));
+    } catch (e) {
+      // Continue without session storage
+    }
+    
+    return newSessionId;
+  }
+  
+  var visitorId = getVisitorId();
+  var sessionId = getSessionId();
+  
+  // Track an event
+  function trackEvent(eventType, data) {
+    data = data || {};
+    
+    var eventData = {
+      website_id: config.websiteId,
+      event_type: eventType,
+      page_path: window.location.pathname,
+      referrer: document.referrer || 'direct',
+      visitor_id: visitorId,
+      session_id: sessionId,
+      metadata: data
+    };
+    
+    // Use sendBeacon if available (better for page unload events)
+    if (navigator.sendBeacon) {
+      var blob = new Blob([JSON.stringify(eventData)], { type: 'application/json' });
+      navigator.sendBeacon(config.apiUrl, blob);
+    } else {
+      // Fallback to fetch
+      fetch(config.apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(eventData),
+        keepalive: true
+      }).catch(function(error) {
+        console.warn('Zappy Analytics: Failed to track event', error);
+      });
+    }
+  }
+  
+  // Track page view
+  if (config.trackPageViews) {
+    trackEvent('pageview', {
+      title: document.title,
+      url: window.location.href
+    });
+  }
+  
+  // Track clicks on important elements
+  if (config.trackClicks) {
+    document.addEventListener('click', function(e) {
+      var target = e.target;
+      
+      // Track button clicks (counted as actions)
+      if (target.tagName === 'BUTTON' || target.closest('button')) {
+        var button = target.tagName === 'BUTTON' ? target : target.closest('button');
+        trackEvent('click', {
+          element: 'button',
+          text: button.textContent.trim().substring(0, 100),
+          id: button.id || null,
+          class: button.className || null
+        });
+      }
+      
+      // Track link clicks (navigation - not counted as actions)
+      else if (target.tagName === 'A' || target.closest('a')) {
+        var link = target.tagName === 'A' ? target : target.closest('a');
+        trackEvent('navigation', {
+          element: 'link',
+          text: link.textContent.trim().substring(0, 100),
+          href: link.href,
+          external: link.hostname !== window.location.hostname
+        });
+      }
+    }, true);
+  }
+  
+  // Track form submissions
+  if (config.trackFormSubmissions) {
+    document.addEventListener('submit', function(e) {
+      var form = e.target;
+      
+      trackEvent('form_submit', {
+        form_id: form.id || null,
+        form_name: form.name || null,
+        form_action: form.action || null,
+        form_method: form.method || 'GET'
+      });
+    }, true);
+  }
+  
+  // Track time on page (send on page unload)
+  var pageLoadTime = Date.now();
+  
+  window.addEventListener('beforeunload', function() {
+    var timeOnPage = Math.floor((Date.now() - pageLoadTime) / 1000); // in seconds
+    
+    trackEvent('page_unload', {
+      time_on_page: timeOnPage,
+      page_path: window.location.pathname
+    });
+  });
+  
+  // Expose tracking function globally for custom events
+  window.zappyAnalytics = {
+    track: trackEvent,
+    getVisitorId: function() { return visitorId; },
+    getSessionId: function() { return sessionId; }
+  };
+  
+})();
+</script>
+<!-- End Zappy Analytics -->
+    <meta property="og:title" content="הסיפור שלנו - תוכן חינוכי איכותי לילדים דתיים — צבעוני">
+  <meta property="og:description" content="צבעוני נוסדה מתוך אהבה ליצירה ומחויבות לערכים יהודיים. למדו על הייעוד שלנו ליצור דפי צביעה חינוכיים ומרתקים המותאמים במיוחד לילדים דתיים ולמשפחותיהם.">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="he_IL">
+  
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="הסיפור שלנו - תוכן חינוכי איכותי לילדים דתיים — צבעוני">
+  <meta name="twitter:description" content="צבעוני נוסדה מתוך אהבה ליצירה ומחויבות לערכים יהודיים. למדו על הייעוד שלנו ליצור דפי צביעה חינוכיים ומרתקים המותאמים במיוחד לילדים דתיים ולמשפחותיהם.">
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="/assets/favicon-48x48.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/assets/favicon-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/assets/favicon-512x512.png">
+    <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+    <!-- Cookie Consent -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vanilla-cookieconsent@3/dist/cookieconsent.css">
+    <script src="https://cdn.jsdelivr.net/npm/vanilla-cookieconsent@3/dist/cookieconsent.umd.js"></script>
+    <!-- Mickidum Accessibility Toolbar -->
+    <script src="https://cdn.jsdelivr.net/gh/mickidum/acc_toolbar/acctoolbar/acctoolbar.min.js"></script>
+    <link rel="stylesheet" href="/styles.css">
+
+    <style id="zappy-dropdown-submenu-styles">
+      /* ========== DESKTOP DROPDOWN SUBMENU STYLES ========== */
+      /* Base styles for dropdown submenus - parent must be positioned */
+      .nav-menu li:has(.sub-menu), nav li:has(.sub-menu), .navbar li:has(.sub-menu), #navMenu li:has(.sub-menu) { position: relative; }
+      /* Submenu base - hidden by default */
+      .nav-menu .sub-menu, nav .sub-menu, .navbar .sub-menu, #navMenu .sub-menu { display: block !important; position: absolute !important; top: 100%; left: 0; min-width: 220px; background: white; border-radius: 8px; box-shadow: 0 8px 25px rgba(0,0,0,0.15); padding: 8px 0; opacity: 0; visibility: hidden; transform: translateY(10px); transition: all 0.3s ease; z-index: 1000; list-style: none; pointer-events: none; }
+      /* CRITICAL: Desktop hover styles to show dropdown */
+      .nav-menu li:hover > .sub-menu, nav li:hover > .sub-menu, .navbar li:hover > .sub-menu, #navMenu li:hover > .sub-menu { opacity: 1 !important; visibility: visible !important; transform: translateY(0) !important; pointer-events: auto !important; }
+      /* Submenu item styling */
+      .sub-menu li { list-style: none; margin: 0; padding: 0; }
+      .sub-menu a { display: block !important; padding: 10px 16px !important; color: #333 !important; font-weight: 500; text-decoration: none; white-space: nowrap; transition: background-color 0.2s; }
+      .sub-menu a:hover { background-color: #f5f5f5; }
+      /* RTL (Hebrew/Arabic) dropdown positioning */
+      [dir="rtl"] .nav-menu .sub-menu, [dir="rtl"] nav .sub-menu, [dir="rtl"] .navbar .sub-menu, html[lang="he"] .nav-menu .sub-menu, html[lang="he"] nav .sub-menu, html[lang="he"] .navbar .sub-menu, html[lang="ar"] .nav-menu .sub-menu, html[lang="ar"] nav .sub-menu, html[lang="ar"] .navbar .sub-menu { left: auto !important; right: 0 !important; }
+      /* Hide empty dropdown menus */
+      .sub-menu:empty, .sub-menu:not(:has(li:not(.zappy-hidden-menu-item))), .sub-menu:not(:has(li)) { display: none !important; opacity: 0 !important; visibility: hidden !important; pointer-events: none !important; }
+      /* Desktop: show submenu on Menu Group hover */
+      li:has(.menu-group-title):hover > .sub-menu { opacity: 1 !important; visibility: visible !important; transform: translateY(0) !important; pointer-events: auto !important; }
+      /* Menu Group title styling */
+      .nav-menu > li > .menu-group-title, #navMenu > li > .menu-group-title { display: inline-block; padding: 0.5rem 1rem; cursor: default; user-select: none; }
+      
+      /* ========== MOBILE SUBMENU STYLES ========== */
+      @media (max-width: 768px) {
+        .nav-menu .sub-menu, nav .sub-menu, .navbar .sub-menu, #navMenu .sub-menu { position: static !important; transform: none !important; box-shadow: none !important; background: transparent !important; max-height: 0; overflow: hidden; opacity: 0; visibility: hidden; transition: max-height 0.3s ease, opacity 0.3s ease; padding: 0 !important; border-radius: 0 !important; }
+        .sub-menu.mobile-expanded { max-height: 500px !important; opacity: 1 !important; visibility: visible !important; padding: 8px 0 8px 16px !important; }
+        [dir="rtl"] .sub-menu.mobile-expanded, html[lang="he"] .sub-menu.mobile-expanded { padding: 8px 16px 8px 0 !important; }
+        /* Disable hover behavior on mobile */
+        .nav-menu li:hover > .sub-menu, nav li:hover > .sub-menu, .navbar li:hover > .sub-menu, #navMenu li:hover > .sub-menu { opacity: 0; visibility: hidden; pointer-events: none; }
+        .nav-menu li > .sub-menu.mobile-expanded, nav li > .sub-menu.mobile-expanded, .navbar li > .sub-menu.mobile-expanded, #navMenu li > .sub-menu.mobile-expanded { opacity: 1 !important; visibility: visible !important; pointer-events: auto !important; }
+        .nav-menu li:has(.sub-menu), nav li:has(.sub-menu), .navbar li:has(.sub-menu), #navMenu li:has(.sub-menu) { display: flex !important; flex-wrap: wrap !important; align-items: center !important; position: relative !important; min-height: 44px !important; }
+        .nav-menu li:has(.sub-menu) > a, nav li:has(.sub-menu) > a, .navbar li:has(.sub-menu) > a, #navMenu li:has(.sub-menu) > a { flex: 1 !important; min-width: 0 !important; }
+        .nav-menu li:has(.sub-menu) > .menu-group-title, nav li:has(.sub-menu) > .menu-group-title, .navbar li:has(.sub-menu) > .menu-group-title, #navMenu li:has(.sub-menu) > .menu-group-title { flex: 1 !important; min-width: 0 !important; padding: 0 !important; line-height: inherit !important; }
+        .nav-menu li:has(.sub-menu) > .sub-menu, nav li:has(.sub-menu) > .sub-menu, .navbar li:has(.sub-menu) > .sub-menu, #navMenu li:has(.sub-menu) > .sub-menu { flex-basis: 100% !important; width: 100% !important; }
+        .nav-menu li:has(.sub-menu) > a [class*="chevron"], .nav-menu li:has(.sub-menu) > a [class*="arrow"], .nav-menu li:has(.sub-menu) > a .fa-chevron-down, .nav-menu li:has(.sub-menu) > a .fa-angle-down, nav li:has(.sub-menu) > a [class*="chevron"], nav li:has(.sub-menu) > a [class*="arrow"], #navMenu li:has(.sub-menu) > a [class*="chevron"], #navMenu li:has(.sub-menu) > a [class*="arrow"] { display: none !important; visibility: hidden !important; }
+        .mobile-submenu-toggle { display: flex !important; align-items: center !important; justify-content: center !important; width: 44px !important; height: auto !important; background: transparent !important; border: none !important; cursor: pointer !important; color: var(--text-light) !important; position: static !important; flex-shrink: 0 !important; align-self: stretch !important; z-index: 2 !important; padding: 0 !important; margin: 0 !important; }
+        .mobile-submenu-toggle::after { content: '' !important; width: 0 !important; height: 0 !important; border-left: 6px solid transparent !important; border-right: 6px solid transparent !important; border-top: 7px solid currentColor !important; transition: transform 0.3s ease !important; }
+        .mobile-submenu-toggle.expanded::after { transform: rotate(180deg) !important; }
+        .sub-menu a { padding: 10px 0 !important; display: block !important; color: var(--text-light) !important; }
+        .navbar .sub-menu li a, nav.navbar .sub-menu li a, .zappy-products-dropdown .sub-menu a { color: var(--text-light) !important; }
+      }
+      @media (min-width: 769px) { .mobile-submenu-toggle { display: none !important; } }
+    </style>
+
+    <style id="zappy-widget-visibility">
+      #mic-access-tool-general-button, .mic-access-tool-general-button,
+      #mic-init-access-tool .mic-access-tool-general-button, #mic-init-access-tool #mic-access-tool-general-button,
+      ._access-icon, #mic-access-tool-box, .mic-access-tool-box,
+      #mic-init-access-tool #mic-access-tool-box, div[id*="mic-access-tool-box"], ._access-menu {
+        display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important;
+      }
+    </style>
+</head>
+<body>
+
+
+    <div class="mobile-search-panel" id="mobile-search-panel">
+      <div class="search-wrapper">
+        <input type="text" id="mobile-search-input" placeholder="חיפוש מוצרים..." autocomplete="off">
+        <button class="search-submit" id="mobile-search-submit" title="חיפוש">
+          <svg width="20" height="20" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><path d="M21 21l-4.35-4.35"></path></svg>
+        </button>
+        <button class="close-search" id="close-mobile-search">
+          <svg width="20" height="20" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+        </button>
+      </div>
+      <div class="search-results" id="mobile-search-results"></div>
+    </div>
+  
+<script>window.ZAPPY_WEBSITE_ID = "c06f211c-2034-4e66-9ac6-76abbdc8956e";window.ZAPPY_API_BASE = (window.location.pathname.includes('/preview') ? "https://api.zappy5.com" : "https://api.zappy5.com");</script>
+  <nav class="navbar" dir="rtl">
+  <button class="mobile-toggle" id="mobileToggle" aria-label="Menu">
+    <svg class="hamburger-icon" width="24" height="24" viewbox="0 0 24 24" fill="none">
+      <path d="M3 12h18M3 6h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+    </svg>
+    <svg class="close-icon" width="24" height="24" viewbox="0 0 24 24" fill="none" style="display:none;">
+      <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+    </svg>
+  </button>
+  
+  <button class="phone-header-btn" aria-label="Call">
+    <svg width="20" height="20" viewbox="0 0 24 24" fill="currentColor">
+      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+    </svg>
+  </button>
+  
+  <div class="nav-container">
+    <div class="nav-brand">
+      <a href="/" class="logo-link">
+        <img src="/assets/business-logo.webp" alt="צבעוני" class="logo">
+      </a>
+    </div>
+    
+    <ul class="nav-menu" id="navMenu">
+
+    <li class="menu-item-has-children zappy-products-dropdown">
+      <a href="/products">
+        מוצרים
+        <svg class="dropdown-arrow" width="12" height="12" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M6 9l6 6 6-6"></path>
+        </svg>
+      </a>
+      <ul class="sub-menu" id="zappy-nav-category-links">
+        <li><a href="/products">כל המוצרים</a></li>
+        <!-- Categories will be loaded dynamically -->
+      </ul>
+    </li>
+  <li><a href="/packs">חבילות</a></li><li><a href="/about">אודות</a></li><li><a href="/contact">צור קשר</a></li></ul><div class="nav-ecommerce-icons nav-icons-left"><a href="/login" class="login-link nav-login" title="התחברות"><svg class="login-icon" width="20" height="20" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></a><a href="#cart" class="cart-link nav-cart" id="cart-drawer-toggle" title="עגלת קניות"><svg class="cart-icon" width="20" height="20" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg><span class="cart-count">0</span></a><div class="nav-search-box">
+    <input type="text" class="nav-search-input" id="nav-search-input" placeholder="חיפוש מוצרים..." autocomplete="off">
+    <button class="nav-search-btn" id="nav-search-btn" title="חיפוש">
+      <svg class="search-icon" width="18" height="18" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><path d="M21 21l-4.35-4.35"></path></svg>
+    </button>
+    <div class="nav-search-results" id="nav-search-results"></div>
+  </div></div><div class="nav-ecommerce-icons nav-icons-right"><button class="nav-search-toggle" id="mobile-search-toggle" title="חיפוש"><svg width="18" height="18" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><path d="M21 21l-4.35-4.35"></path></svg></button></div>
+    
+    
+  </div>
+</nav>
+
+    <nav class="zappy-catalog-menu rtl" id="zappy-catalog-menu" dir="rtl">
+      <div class="catalog-menu-container">
+        <a href="/products" class="catalog-menu-item catalog-menu-all">כל המוצרים</a>
+        <div class="catalog-menu-categories" id="zappy-category-links">
+          <!-- Categories will be loaded dynamically -->
+        </div>
+      </div>
+    </nav>
+  
+  
+  <main>
+    <section class="about-story-section" data-layout-spec="אודות-story">
+  <div class="about-story-container">
+    <div class="about-story-content">
+      <div class="about-story-text">
+        <h1>מקום רך לצבוע</h1>
+        <p>אנחנו מאמינים שכל ילד ראוי למרחב יצירתי שמכבד את ערכיו ומסורותיו. דפי הצביעה שלנו מעוצבים בקפידה כדי לעודד שמחה, דמיון ויצירתיות, תוך שמירה על תכנים מתאימים לגיל ולרקע הדתי של הילדים. כל דף הוא הזמנה לחוויה של צבע, משחק ולמידה מהנה.</p>
+        <p>אנחנו בוחרים בעיצוב רגוע ובהיר, בגוונים עדינים ובאיורים ברורים, כך שהורים יכולים לסמוך שהתוכן מתאים לילדיהם. המטרה שלנו היא ליצור חוויה שקטה ומזמינה, שבה הילדים יכולים להתמקד ביצירה ולהנות מכל רגע של צביעה.</p>
+      </div>
+      <div class="about-story-image-wrapper">
+        <img data-placeholder="about-story-image-1" data-context="Gentle pastel illustration showing religious Jewish children sitting at a wooden table in a bright, warm classroom or home setting, coloring together with crayons and colored pencils. The children are wearing modest clothing (long sleeves, skirts for girls, kippot for boys). The scene includes soft natural light from a window, colorful artwork on the walls, and a calm, joyful atmosphere. The illustration style should be rounded, friendly, and child-appropriate with pastel pink, purple, and yellow tones matching the Tzivoni brand colors. The overall mood is peaceful, creative, and welcoming." width="600" height="500" src="/assets/site-about-story-image-1.webp" alt="ילדים דתיים צובעים יחד בשמחה">
+      </div>
+    </div>
+  </div>
+  <div class="about-story-divider-wrapper">
+    <svg data-no-icon-edit="true" aria-hidden="true" viewbox="0 0 1200 80" preserveaspectratio="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0,80 L0,50 Q100,48 200,52 T400,48 Q500,52 600,50 T800,48 Q900,50 1000,52 T1200,48 L1200,80 Z" fill="#F6EFFF" opacity="0.4"></path>
+      <path d="M0,80 L0,60 Q120,56 240,62 T480,58 Q600,62 720,60 T960,56 Q1080,60 1200,62 L1200,80 Z" fill="#F6EFFF"></path>
+    </svg>
+  </div>
+</section>
+
+<section class="about-values-section" data-layout-spec="אודות-values">
+  <div class="about-values-container">
+    <div class="about-values-intro">
+      <h2>מה מנחה את התוכן שלנו</h2>
+      <p>אנחנו מאמינים שדפי צביעה הם יותר מסתם בידור – הם חלון לעולם של יצירתיות, ערכים ושמחה משפחתית. כל דף שאנחנו מעצבים נבנה על ארבעה עמודי תווך שמבטיחים שהתוכן יהיה מתאים, מכובד ומעשיר.</p>
+    </div>
+
+    <div class="about-values-grid">
+      <div class="about-values-card">
+        <div class="about-values-icon">
+          <svg data-element-type="icon" data-icon-type="svg" width="48" height="48" viewbox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="24" cy="24" r="20" fill="#F6D46A" opacity="0.2"></circle>
+            <path d="M24 8C15.163 8 8 15.163 8 24C8 32.837 15.163 40 24 40C32.837 40 40 32.837 40 24C40 15.163 32.837 8 24 8ZM24 36C17.373 36 12 30.627 12 24C12 17.373 17.373 12 24 12C30.627 12 36 17.373 36 24C36 30.627 30.627 36 24 36Z" fill="currentColor"></path>
+            <path d="M30 22C30 22 28.5 25 24 25C19.5 25 18 22 18 22" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+            <circle cx="19" cy="19" r="2" fill="currentColor"></circle>
+            <circle cx="29" cy="19" r="2" fill="currentColor"></circle>
+          </svg>
+        </div>
+        <h3>פשטות ידידותית לילדים</h3>
+        <p>כל דף מעוצב בקווים ברורים ומרווחים, מתאים לידיים קטנות ולריכוז של ילדים. אין פרטים מסובכים מדי – רק הנאה טהורה מיצירה.</p>
+      </div>
+
+      <div class="about-values-card">
+        <div class="about-values-icon">
+          <svg data-element-type="icon" data-icon-type="svg" width="48" height="48" viewbox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="10" y="8" width="28" height="32" rx="2" fill="#E86C9B" opacity="0.2"></rect>
+            <path d="M14 8C12.8954 8 12 8.89543 12 10V38C12 39.1046 12.8954 40 14 40H34C35.1046 40 36 39.1046 36 38V10C36 8.89543 35.1046 8 34 8H14Z" stroke="currentColor" stroke-width="2"></path>
+            <path d="M16 16H32M16 22H32M16 28H28" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+            <circle cx="24" cy="12" r="3" fill="#C9B7E7"></circle>
+          </svg>
+        </div>
+        <h3>כבוד למסורת</h3>
+        <p>התוכן שלנו משקף ערכים דתיים וחגים יהודיים באופן מכובד ואותנטי. כל דף נבדק בקפידה כדי להבטיח התאמה מלאה לקהל הדתי.</p>
+      </div>
+
+      <div class="about-values-card">
+        <div class="about-values-icon">
+          <svg data-element-type="icon" data-icon-type="svg" width="48" height="48" viewbox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="24" cy="24" r="18" fill="#C9B7E7" opacity="0.2"></circle>
+            <path d="M24 6L26.4 16.8L34 12L29.6 20.4L40 22L29.6 23.6L34 32L26.4 27.2L24 38L21.6 27.2L14 32L18.4 23.6L8 22L18.4 20.4L14 12L21.6 16.8L24 6Z" fill="currentColor"></path>
+            <circle cx="24" cy="24" r="4" fill="#FFFFFF"></circle>
+          </svg>
+        </div>
+        <h3>אווירה חיובית ושלווה</h3>
+        <p>אנחנו בוחרים נושאים שמעודדים שמחה, אופטימיות ושלווה. ללא אלימות, ללא דמויות בעייתיות – רק תוכן שמחמם את הלב.</p>
+      </div>
+
+      <div class="about-values-card">
+        <div class="about-values-icon">
+          <svg data-element-type="icon" data-icon-type="svg" width="48" height="48" viewbox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="8" y="12" width="32" height="24" rx="2" fill="#F6D46A" opacity="0.2"></rect>
+            <path d="M10 12C8.89543 12 8 12.8954 8 14V34C8 35.1046 8.89543 36 10 36H38C39.1046 36 40 35.1046 40 34V14C40 12.8954 39.1046 12 38 12H10Z" stroke="currentColor" stroke-width="2"></path>
+            <path d="M14 20H34M14 24H34M14 28H28" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+            <circle cx="36" cy="16" r="6" fill="#E86C9B"></circle>
+            <path d="M36 13V16L38 18" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+        </div>
+        <h3>מוכן להדפסה משפחתית</h3>
+        <p>כל דף אופטימלי להדפסה ביתית בפורמט A4 סטנדרטי. חסכוני בדיו, איכותי בתוצאה – מושלם לפעילות משפחתית בכל זמן.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="about-values-divider-wrapper">
+    <svg data-no-icon-edit="true" aria-hidden="true" viewbox="0 0 1200 60" preserveaspectratio="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0,60 L0,25 Q100,28 200,22 T400,28 Q500,24 600,30 T800,26 Q900,30 1000,24 T1200,28 L1200,60 Z" fill="#FFFFFF"></path>
+    </svg>
+  </div>
+</section>
+
+<section class="about-process-section" data-layout-spec="אודות-process">
+  <div class="about-process-container">
+    <div class="about-process-intro">
+      <h2>איך נוצרים החבילות שלנו</h2>
+      <p>כל חבילת דפי צביעה נוצרת בקפידה רבה, עם תשומת לב לפרטים הקטנים ולערכים שחשובים לנו. הנה התהליך המלא:</p>
+    </div>
+
+    <div class="about-process-steps">
+      <div class="about-process-step-card">
+        <div class="about-process-step-icon">
+          <svg data-element-type="icon" data-icon-type="svg" width="80" height="80" viewbox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="40" cy="40" r="36" fill="var(--accent)" opacity="0.2"></circle>
+            <path d="M40 20L44 32L56 34L48 42L50 54L40 48L30 54L32 42L24 34L36 32L40 20Z" fill="var(--accent)" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path>
+            <circle cx="28" cy="28" r="4" fill="var(--secondary)" opacity="0.6"></circle>
+            <circle cx="52" cy="28" r="3" fill="var(--primary)" opacity="0.5"></circle>
+            <circle cx="40" cy="60" r="3" fill="var(--accent)" opacity="0.7"></circle>
+          </svg>
+        </div>
+        <div class="about-process-step-number">שלב 1</div>
+        <h3>בחירת נושא וגיל</h3>
+        <p>אנחנו בוחרים נושאים מתאימים לילדים דתיים – חגים, פרשות שבוע, ערכים יהודיים – ומתאימים את רמת הקושי לגיל הילד.</p>
+      </div>
+
+      <div class="about-process-connector">
+        <svg width="100" height="8" viewbox="0 0 100 8" fill="none" xmlns="http://www.w3.org/2000/svg" preserveaspectratio="none">
+          <line x1="0" y1="4" x2="100" y2="4" stroke="var(--border-light)" stroke-width="2" stroke-dasharray="8 6"></line>
+        </svg>
+      </div>
+
+      <div class="about-process-step-card">
+        <div class="about-process-step-icon">
+          <svg data-element-type="icon" data-icon-type="svg" width="80" height="80" viewbox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="40" cy="40" r="36" fill="var(--secondary)" opacity="0.2"></circle>
+            <path d="M25 30C25 27 27 25 30 25H50C53 25 55 27 55 30V50C55 53 53 55 50 55H30C27 55 25 53 25 50V30Z" fill="white" stroke="currentColor" stroke-width="2.5"></path>
+            <path d="M32 35L38 42L48 32" stroke="var(--primary)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+            <circle cx="35" cy="48" r="2" fill="var(--accent)"></circle>
+            <circle cx="45" cy="48" r="2" fill="var(--secondary)"></circle>
+          </svg>
+        </div>
+        <div class="about-process-step-number">שלב 2</div>
+        <h3>איור בסגנון קוואי רך</h3>
+        <p>המאיירים שלנו יוצרים דמויות חמודות עם קווי מתאר ברורים, מתאימים במיוחד לצביעה. כל דף מעוצב בקפידה עם פרטים מענגים.</p>
+      </div>
+
+      <div class="about-process-connector">
+        <svg width="100" height="8" viewbox="0 0 100 8" fill="none" xmlns="http://www.w3.org/2000/svg" preserveaspectratio="none">
+          <line x1="0" y1="4" x2="100" y2="4" stroke="var(--border-light)" stroke-width="2" stroke-dasharray="8 6"></line>
+        </svg>
+      </div>
+
+      <div class="about-process-step-card">
+        <div class="about-process-step-icon">
+          <svg data-element-type="icon" data-icon-type="svg" width="80" height="80" viewbox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="40" cy="40" r="36" fill="var(--primary)" opacity="0.2"></circle>
+            <path d="M30 35L35 40L30 45" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M50 35L45 40L50 45" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path>
+            <circle cx="40" cy="25" r="3" fill="var(--accent)"></circle>
+            <circle cx="40" cy="55" r="3" fill="var(--secondary)"></circle>
+            <path d="M36 40C36 38 38 36 40 36C42 36 44 38 44 40C44 42 42 44 40 44C38 44 36 42 36 40Z" fill="var(--primary)" opacity="0.4"></path>
+          </svg>
+        </div>
+        <div class="about-process-step-number">שלב 3</div>
+        <h3>בדיקה והתאמה</h3>
+        <p>אנחנו בודקים כל דף לוודא שהוא רגוע, מתאים לערכים שלנו, וברור להדפסה. רק אחרי אישור סופי הדף מגיע אליכם.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="about-process-divider-wrapper">
+    <svg data-no-icon-edit="true" aria-hidden="true" viewbox="0 0 1200 100" preserveaspectratio="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="confettiGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" style="stop-color:var(--bg-light);stop-opacity:1"></stop>
+          <stop offset="100%" style="stop-color:var(--bg-light);stop-opacity:0.8"></stop>
+        </linearGradient>
+      </defs>
+      <path d="M0,100 L0,30 Q100,35 200,28 T400,32 Q500,28 600,35 T800,30 Q900,32 1000,28 T1200,35 L1200,100 Z" fill="#BFA4EA"></path>
+      <circle cx="150" cy="20" r="4" fill="var(--accent)" opacity="0.6"></circle>
+      <circle cx="280" cy="15" r="3" fill="var(--primary)" opacity="0.5"></circle>
+      <circle cx="450" cy="25" r="5" fill="var(--secondary)" opacity="0.4"></circle>
+      <circle cx="620" cy="18" r="3" fill="var(--accent)" opacity="0.7"></circle>
+      <circle cx="800" cy="22" r="4" fill="var(--primary)" opacity="0.5"></circle>
+      <circle cx="950" cy="16" r="3" fill="var(--secondary)" opacity="0.6"></circle>
+      <circle cx="1100" cy="28" r="5" fill="var(--accent)" opacity="0.4"></circle>
+    </svg>
+  </div>
+</section>
+
+<section class="about-trust-section" data-layout-spec="אודות-trust">
+  <div class="about-trust-container">
+    <div class="about-trust-intro">
+      <h2>בנוי על אמון הורי</h2>
+      <p>כל תוכן במערכת שלנו נבחר בקפידה כדי להתאים לערכים ולמסורת של המשפחה הדתית. אנחנו מבינים את החשיבות של תוכן נקי ומתאים לגיל.</p>
+    </div>
+    
+    <div class="about-trust-cards">
+      <div class="trust-card">
+        <div class="trust-icon">
+          <svg data-element-type="icon" data-icon-type="svg" viewbox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+            <path d="M32 8L36 20L48 24L36 28L32 40L28 28L16 24L28 20Z" fill="currentColor" opacity="0.25"></path>
+            <circle cx="32" cy="32" r="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"></circle>
+            <path d="M32 20V32L40 36" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+        </div>
+        <h3>נושאים מתאימים לגיל</h3>
+        <p>כל דף צביעה תוכנן במיוחד עבור ילדים דתיים, עם דגש על חגים, מצוות ותכנים חינוכיים שמחזקים את הזהות היהודית.</p>
+      </div>
+      
+      <div class="trust-card">
+        <div class="trust-icon">
+          <svg data-element-type="icon" data-icon-type="svg" viewbox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+            <rect x="14" y="18" width="36" height="28" rx="3" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"></rect>
+            <path d="M20 18V14C20 11.8 21.8 10 24 10H40C42.2 10 44 11.8 44 14V18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"></path>
+            <circle cx="32" cy="32" r="4" fill="currentColor" opacity="0.3"></circle>
+            <path d="M26 38L32 32L38 38" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+        </div>
+        <h3>עיצוב ויזואלי רגוע</h3>
+        <p>הממשק והתכנים מעוצבים בצבעים רכים ונעימים, ללא אלמנטים מסחריים או מסיחים את הדעת, כדי ליצור חוויה בטוחה ומרגיעה.</p>
+      </div>
+      
+      <div class="trust-card">
+        <div class="trust-icon">
+          <svg data-element-type="icon" data-icon-type="svg" viewbox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+            <rect x="16" y="12" width="32" height="40" rx="2" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"></rect>
+            <path d="M24 22H40M24 30H40M24 38H34" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"></path>
+            <path d="M42 48L48 54L56 46" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path>
+            <circle cx="50" cy="50" r="10" fill="var(--bg-light)" opacity="0.6"></circle>
+          </svg>
+        </div>
+        <h3>קבצים מוכנים להדפסה</h3>
+        <p>כל דף צביעה מגיע בפורמט PDF איכותי, אופטימלי להדפסה ביתית על נייר A4 רגיל. ללא צורך בהגדרות מיוחדות או תוכנות נוספות.</p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="about-trust-sparkle-cluster" aria-hidden="true">
+    <svg data-no-icon-edit="true" viewbox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <path d="M40 10L42 18L50 20L42 22L40 30L38 22L30 20L38 18Z" fill="currentColor" opacity="0.4"></path>
+      <path d="M60 35L61 39L65 40L61 41L60 45L59 41L55 40L59 39Z" fill="currentColor" opacity="0.5"></path>
+      <path d="M20 50L21 53L24 54L21 55L20 58L19 55L16 54L19 53Z" fill="currentColor" opacity="0.35"></path>
+    </svg>
+  </div>
+  
+  <div class="about-trust-divider-wrapper">
+    <svg data-no-icon-edit="true" aria-hidden="true" viewbox="0 0 1200 100" preserveaspectratio="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="trustDividerGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style="stop-color:var(--bg-dark);stop-opacity:1"></stop>
+          <stop offset="100%" style="stop-color:var(--bg-light);stop-opacity:1"></stop>
+        </linearGradient>
+      </defs>
+      <path d="M0,100 L0,40 Q150,35 300,42 T600,38 Q750,42 900,35 T1200,40 L1200,100 Z" fill="#FFFFFF"></path>
+    </svg>
+  </div>
+</section>
+
+<section class="about-cta-section" data-layout-spec="אודות-cta">
+  <div class="about-cta-container">
+    <h2 class="about-cta-title">בואו נבחר את הנושא המתאים</h2>
+    <p class="about-cta-text">בין אם מדובר בחג, בכיתה או בזמן שקט בבית—ספרו לנו מה אתם צריכים.</p>
+    <div class="about-cta-buttons">
+      <a href="/contact" class="btn-cta btn-primary">צור קשר</a>
+      <a href="/packs" class="btn-cta btn-secondary">עיינו בחבילות</a>
+    </div>
+  </div>
+</section>
+  </main>
+  
+  <footer class="site-footer">
+  <div class="footer-container">
+    <div class="footer-top">
+      <div class="footer-column footer-company">
+        <img src="/assets/business-logo.webp" alt="צבעוני" class="logo">
+        <p class="footer-description">תוכן חינוכי איכותי ומעשיר לילדים - למידה בצבעים!</p>
+      </div>
+      
+      <div class="footer-column footer-links">
+        <h3 class="footer-heading">קישורים מהירים</h3>
+        <ul class="footer-nav">
+          <li><a href="/packs">חבילות</a></li>
+          <li><a href="/about">אודות</a></li>
+          <li><a href="/contact">צור קשר</a></li>
+        </ul>
+      </div>
+      
+      <div class="footer-column footer-contact">
+        <h3 class="footer-heading">צור קשר</h3>
+        <ul class="contact-list">
+          <li>
+            <i class="fas fa-envelope"></i>
+            <a href="mailto:[business_email]">[business_email]</a>
+          </li>
+          <li>
+            <i class="fas fa-phone"></i>
+            <a href="tel:[business_phone]">[business_phone]</a>
+          </li>
+          <li><a href="/"><i class="fas fa-map-marker-alt"></i>
+            <span>[business_address]</span></a></li>
+        </ul>
+      </div>
+      
+      <div class="footer-column footer-social">
+        <h3 class="footer-heading">עקבו אחרינו</h3>
+        <div class="social-links">
+          <a href="[facebook_handle]" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+          <a href="[instagram_handle]" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+          <a href="[whatsapp_handle]" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+        </div>
+      </div>
+    </div>
+    
+    <div class="footer-bottom">
+      <div class="footer-bottom-content">
+        <div class="copyright">
+          <p>© 2026 צבעוני. All rights reserved.</p>
+        </div>
+        <div class="footer-legal">
+          <a href="/privacy">Privacy Policy</a>
+          <span class="separator">|</span>
+          <a href="/terms">Terms &amp; Conditions</a><span class="separator">|</span>
+            <a href="/return-policy" aria-label="מדיניות החזרות">
+              מדיניות החזרות
+            </a>
+          <span class="separator">|</span>
+          <a href="/accessibility">Accessibility</a>
+          <span class="separator">|</span>
+          <a href="https://zappy5.com" target="_blank" class="zappy-attribution">Generated by Zappy</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+  
+  <a href="https://wa.me/[whatsapp_handle]" class="whatsapp-float" aria-label="WhatsApp">
+    <i class="fab fa-whatsapp"></i>
+  </a>
+  
+  <div data-integration="accessibility:toolbar"></div>
+
+    <script src="/script.js"></script>
+
+    <script id="zappy-mobile-submenu-script">
+    (function() {
+      function initMobileSubmenuToggles() {
+        if (window.innerWidth > 768) {
+          document.querySelectorAll('.mobile-submenu-toggle').forEach(function(btn) { btn.remove(); });
+          document.querySelectorAll('.sub-menu.mobile-expanded').forEach(function(menu) { menu.classList.remove('mobile-expanded'); });
+          return;
+        }
+        var items = document.querySelectorAll('.nav-menu li:has(.sub-menu), nav li:has(.sub-menu), .navbar li:has(.sub-menu), #navMenu li:has(.sub-menu)');
+        items.forEach(function(li) {
+          if (li.querySelector('.mobile-submenu-toggle')) return;
+          var submenu = li.querySelector('.sub-menu');
+          var parentLink = li.querySelector(':scope > a');
+          if (!submenu || !parentLink) return;
+          var toggleBtn = document.createElement('button');
+          toggleBtn.className = 'mobile-submenu-toggle';
+          toggleBtn.setAttribute('aria-label', 'Toggle submenu');
+          toggleBtn.setAttribute('type', 'button');
+          parentLink.insertAdjacentElement('afterend', toggleBtn);
+          toggleBtn.addEventListener('click', function(e) {
+            e.preventDefault(); e.stopPropagation();
+            document.querySelectorAll('.sub-menu.mobile-expanded').forEach(function(menu) {
+              if (menu !== submenu) { menu.classList.remove('mobile-expanded'); var t = menu.parentElement.querySelector('.mobile-submenu-toggle'); if(t) t.classList.remove('expanded'); }
+            });
+            submenu.classList.toggle('mobile-expanded');
+            toggleBtn.classList.toggle('expanded');
+          });
+        });
+      }
+      if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initMobileSubmenuToggles); }
+      else { initMobileSubmenuToggles(); }
+      var resizeTimer; window.addEventListener('resize', function() { clearTimeout(resizeTimer); resizeTimer = setTimeout(initMobileSubmenuToggles, 250); });
+      // Re-initialize when mobile menu becomes visible (MutationObserver)
+      var observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+          if (mutation.type === 'attributes') {
+            var target = mutation.target;
+            if (target.classList && (target.classList.contains('active') || target.classList.contains('open'))) {
+              setTimeout(initMobileSubmenuToggles, 100);
+            }
+          }
+        });
+      });
+      setTimeout(function() {
+        document.querySelectorAll('.mobile-menu, .nav-menu, #navMenu, nav').forEach(function(menu) {
+          observer.observe(menu, { attributes: true, attributeFilter: ['class', 'style'] });
+        });
+      }, 500);
+    })();
+    </script>
+
+    <script id="zappy-navbar-scroll-effect">
+    (function(){var nb=document.querySelector('nav.navbar,.navbar:not(.zappy-catalog-menu)');var cm=document.querySelector('.zappy-catalog-menu');if(!nb)return;var fb='rgba(58,46,69,0.85)';var th=60;nb.style.transition='background 0.3s ease,backdrop-filter 0.3s ease,-webkit-backdrop-filter 0.3s ease,box-shadow 0.3s ease';if(cm)cm.style.transition='background 0.3s ease,backdrop-filter 0.3s ease,-webkit-backdrop-filter 0.3s ease';function onS(){var y=window.scrollY||window.pageYOffset;if(y>th){nb.style.background=fb;nb.style.backdropFilter='blur(12px)';nb.style.webkitBackdropFilter='blur(12px)';nb.style.boxShadow='0 2px 16px rgba(0,0,0,0.12)';if(cm){cm.style.background=fb;cm.style.backdropFilter='blur(12px)';cm.style.webkitBackdropFilter='blur(12px)';}}else{nb.style.background='transparent';nb.style.backdropFilter='none';nb.style.webkitBackdropFilter='none';nb.style.boxShadow='none';if(cm){cm.style.background='transparent';cm.style.backdropFilter='none';cm.style.webkitBackdropFilter='none';}}}window.addEventListener('scroll',onS,{passive:true});onS();})();
+    </script>
+</body>
+</html>
